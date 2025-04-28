@@ -1,6 +1,4 @@
-
-name: Lint and Test Charts
-
+name: Deploy
 on: pull_request
 
 jobs:
