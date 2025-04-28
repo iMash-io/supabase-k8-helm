@@ -1,10 +1,24 @@
-name: Lint and Test Charts
+name: CI: Lint, Test & Release
 
-on: pull_request
+# Trigger on PRs against main, and on pushes to main
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+# We need write perms for the release job to push back docs/
+permissions:
+  contents: write
 
 jobs:
   lint-test:
+    name: Lint & Test Charts
     runs-on: ubuntu-latest
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -16,15 +30,16 @@ jobs:
         with:
           version: v3.12.1
 
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
           check-latest: true
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.0
 
-      - name: Run chart-testing (list-changed)
+      - name: List changed charts
         id: list-changed
         run: |
           changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
@@ -32,7 +47,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run chart-testing (lint)
+      - name: Lint changed charts
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --validate-maintainers=false --target-branch ${{ github.event.repository.default_branch }}
 
@@ -40,6 +55,42 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.8.0
 
-      - name: Run chart-testing (install)
+      - name: Install changed charts
         if: steps.list-changed.outputs.changed == 'true'
         run: ct install --target-branch ${{ github.event.repository.default_branch }}
+
+  release:
+    name: Package & Publish Helm Chart
+    runs-on: ubuntu-latest
+    needs: lint-test
+    # only run on pushes to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.1
+
+      - name: Package Helm chart(s)
+        run: |
+          mkdir -p docs
+          # adjust "./chart" to your chart directory if different
+          helm package ./chart -d docs
+
+      - name: Re-generate index.yaml
+        run: |
+          helm repo index docs \
+            --url https://iMash-io.github.io/supabase-k8-helm \
+            --merge docs/index.yaml
+
+      - name: Commit & push docs/
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: chore: publish Helm chart packages [skip ci]
+          file_pattern: docs/**
+
