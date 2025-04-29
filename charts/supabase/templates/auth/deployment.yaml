@@ -30,7 +30,7 @@ spec:
         {{- toYaml .Values.auth.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init-db
-          image: postgres:15-alpine
+          image: postgres:17-alpine
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_HOST
@@ -51,49 +51,6 @@ spec:
                   {{- end }}
             - name: DB_PORT
               value: {{ .Values.auth.environment.DB_PORT | quote }}
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              until pg_isready -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER); do
-              echo "Waiting for database to start..."
-              sleep 2
-              done
-            - echo "Database is ready"
-      containers:
-        - name: {{ include "supabase.auth.name" $ }}
-          securityContext:
-            {{- toYaml .Values.auth.securityContext | nindent 12 }}
-          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
-          env:
-            {{- range $key, $value := .Values.auth.environment }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}
-            {{- if .Values.db.enabled }}
-            - name: DB_HOST
-              value: {{ include "supabase.db.fullname" . }}
-            {{- end }}
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.secret.db.secretRef }}
-                  name: {{ .Values.secret.db.secretRef }}
-                  key: {{ .Values.secret.db.secretRefKey.password | default "password" }}
-                  {{- else }}
-                  name: {{ include "supabase.secret.db" . }}
-                  key: password
-                  {{- end }}
-            - name: DB_PASSWORD_ENC
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.secret.db.secretRef }}
-                  name: {{ .Values.secret.db.secretRef }}
-                  key: {{ .Values.secret.db.secretRefKey.password | default "password" }}
-                  {{- else }}
-                  name: {{ include "supabase.secret.db" . }}
-                  key: password_encoded
-                  {{- end }}
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -104,10 +61,59 @@ spec:
                   name: {{ include "supabase.secret.db" . }}
                   key: database
                   {{- end }}
-            - name: GOTRUE_DB_DATABASE_URL
-              value: $(DB_DRIVER)://$(DB_USER):$(DB_PASSWORD_ENC)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?search_path=auth&sslmode=$(DB_SSL)
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; do
+                echo "Waiting for database to start..."
+                sleep 2
+              done
+              echo "Database is ready"
+      containers:
+        - name: {{ include "supabase.auth.name" $ }}
+          securityContext:
+            {{- toYaml .Values.auth.securityContext | nindent 12 }}
+          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          env:
+            # Tell GoTrue to use Postgres explicitly
             - name: GOTRUE_DB_DRIVER
-              value: $(DB_DRIVER)
+              value: "postgres"
+
+            # Single, unbroken connection URL (must be set in values.yaml)
+            - name: DATABASE_URL
+              value: "{{ .Values.auth.environment.DATABASE_URL }}"
+            - name: GOTRUE_DATABASE_URL
+              value: "{{ .Values.auth.environment.DATABASE_URL }}"
+
+            # All other GoTrue settings
+            - name: GOTRUE_API_HOST
+              value: "{{ .Values.auth.environment.GOTRUE_API_HOST }}"
+            - name: GOTRUE_API_PORT
+              value: "{{ .Values.auth.environment.GOTRUE_API_PORT }}"
+            - name: GOTRUE_SITE_URL
+              value: "{{ .Values.auth.environment.GOTRUE_SITE_URL }}"
+            - name: GOTRUE_URI_ALLOW_LIST
+              value: "{{ .Values.auth.environment.GOTRUE_URI_ALLOW_LIST }}"
+            - name: GOTRUE_DISABLE_SIGNUP
+              value: "{{ .Values.auth.environment.GOTRUE_DISABLE_SIGNUP }}"
+            - name: GOTRUE_EXTERNAL_EMAIL_ENABLED
+              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_EMAIL_ENABLED }}"
+            - name: GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID
+              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID }}"
+            - name: GOTRUE_EXTERNAL_GOOGLE_ENABLED
+              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_ENABLED }}"
+            - name: GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI
+              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI }}"
+            - name: GOTRUE_EXTERNAL_GOOGLE_SECRET
+              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_SECRET }}"
+            - name: GOTRUE_JWT_ADMIN_ROLES
+              value: "{{ .Values.auth.environment.GOTRUE_JWT_ADMIN_ROLES }}"
+            - name: GOTRUE_JWT_AUD
+              value: "{{ .Values.auth.environment.GOTRUE_JWT_AUD }}"
+            - name: GOTRUE_JWT_EXP
+              value: "{{ .Values.auth.environment.GOTRUE_JWT_EXP }}"
             - name: GOTRUE_JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -138,6 +144,7 @@ spec:
                   name: {{ include "supabase.secret.smtp" . }}
                   key: password
                   {{- end }}
+
           {{- with .Values.auth.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
@@ -162,6 +169,7 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+
       {{- with .Values.auth.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
