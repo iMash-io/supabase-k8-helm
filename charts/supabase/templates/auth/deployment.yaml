@@ -28,6 +28,7 @@ spec:
       serviceAccountName: {{ include "supabase.auth.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.auth.podSecurityContext | nindent 8 }}
+
       initContainers:
         - name: init-db
           image: postgres:17-alpine
@@ -62,32 +63,28 @@ spec:
                   key: database
                   {{- end }}
           command:
-            - sh
-            - -c
+            - "sh"
+            - "-c"
             - |
               until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; do
                 echo "Waiting for database to start..."
                 sleep 2
               done
               echo "Database is ready"
+
       containers:
-        - name: {{ include "supabase.auth.name" $ }}
+        - name: {{ include "supabase.auth.name" . }}
           securityContext:
             {{- toYaml .Values.auth.securityContext | nindent 12 }}
           image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
           env:
-            # Tell GoTrue to use Postgres explicitly
             - name: GOTRUE_DB_DRIVER
               value: "postgres"
-
-            # Single, unbroken connection URL (must be set in values.yaml)
             - name: DATABASE_URL
               value: "{{ .Values.auth.environment.DATABASE_URL }}"
             - name: GOTRUE_DATABASE_URL
               value: "{{ .Values.auth.environment.DATABASE_URL }}"
-
-            # All other GoTrue settings
             - name: GOTRUE_API_HOST
               value: "{{ .Values.auth.environment.GOTRUE_API_HOST }}"
             - name: GOTRUE_API_PORT
