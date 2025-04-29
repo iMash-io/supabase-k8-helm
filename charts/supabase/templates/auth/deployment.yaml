@@ -79,6 +79,8 @@ spec:
           image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
           env:
+            - name: API_EXTERNAL_URL
+              value: "{{ .Values.auth.environment.API_EXTERNAL_URL }}"
             - name: GOTRUE_DB_DRIVER
               value: "postgres"
             - name: DATABASE_URL
