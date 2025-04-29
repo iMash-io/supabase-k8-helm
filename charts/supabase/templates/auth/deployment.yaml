@@ -79,70 +79,10 @@ spec:
           image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
           env:
-            - name: API_EXTERNAL_URL
-              value: "{{ .Values.auth.environment.API_EXTERNAL_URL }}"
-            - name: GOTRUE_DB_DRIVER
-              value: "postgres"
-            - name: DATABASE_URL
-              value: "{{ .Values.auth.environment.DATABASE_URL }}"
-            - name: GOTRUE_DATABASE_URL
-              value: "{{ .Values.auth.environment.DATABASE_URL }}"
-            - name: GOTRUE_API_HOST
-              value: "{{ .Values.auth.environment.GOTRUE_API_HOST }}"
-            - name: GOTRUE_API_PORT
-              value: "{{ .Values.auth.environment.GOTRUE_API_PORT }}"
-            - name: GOTRUE_SITE_URL
-              value: "{{ .Values.auth.environment.GOTRUE_SITE_URL }}"
-            - name: GOTRUE_URI_ALLOW_LIST
-              value: "{{ .Values.auth.environment.GOTRUE_URI_ALLOW_LIST }}"
-            - name: GOTRUE_DISABLE_SIGNUP
-              value: "{{ .Values.auth.environment.GOTRUE_DISABLE_SIGNUP }}"
-            - name: GOTRUE_EXTERNAL_EMAIL_ENABLED
-              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_EMAIL_ENABLED }}"
-            - name: GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID
-              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID }}"
-            - name: GOTRUE_EXTERNAL_GOOGLE_ENABLED
-              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_ENABLED }}"
-            - name: GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI
-              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI }}"
-            - name: GOTRUE_EXTERNAL_GOOGLE_SECRET
-              value: "{{ .Values.auth.environment.GOTRUE_EXTERNAL_GOOGLE_SECRET }}"
-            - name: GOTRUE_JWT_ADMIN_ROLES
-              value: "{{ .Values.auth.environment.GOTRUE_JWT_ADMIN_ROLES }}"
-            - name: GOTRUE_JWT_AUD
-              value: "{{ .Values.auth.environment.GOTRUE_JWT_AUD }}"
-            - name: GOTRUE_JWT_EXP
-              value: "{{ .Values.auth.environment.GOTRUE_JWT_EXP }}"
-            - name: GOTRUE_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.secret.jwt.secretRef }}
-                  name: {{ .Values.secret.jwt.secretRef }}
-                  key: {{ .Values.secret.jwt.secretRefKey.secret | default "secret" }}
-                  {{- else }}
-                  name: {{ include "supabase.secret.jwt" . }}
-                  key: secret
-                  {{- end }}
-            - name: GOTRUE_SMTP_USER
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.secret.smtp.secretRef }}
-                  name: {{ .Values.secret.smtp.secretRef }}
-                  key: {{ .Values.secret.smtp.secretRefKey.username | default "username" }}
-                  {{- else }}
-                  name: {{ include "supabase.secret.smtp" . }}
-                  key: username
-                  {{- end }}
-            - name: GOTRUE_SMTP_PASS
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.secret.smtp.secretRef }}
-                  name: {{ .Values.secret.smtp.secretRef }}
-                  key: {{ .Values.secret.smtp.secretRefKey.password | default "password" }}
-                  {{- else }}
-                  name: {{ include "supabase.secret.smtp" . }}
-                  key: password
-                  {{- end }}
+            {{- range $k, $v := .Values.auth.environment }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
 
           {{- with .Values.auth.envFrom }}
           envFrom:
