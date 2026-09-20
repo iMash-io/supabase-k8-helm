@@ -1079,7 +1079,7 @@ functions:
 minio:
   enabled: false
   image:
-    repository: minio/minio
+    repository: quay.io/minio/minio
     pullPolicy: IfNotPresent
     tag: "latest"
   imagePullSecrets: []

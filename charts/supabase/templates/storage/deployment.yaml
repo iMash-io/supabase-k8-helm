@@ -9,6 +9,10 @@ spec:
   {{- if not .Values.storage.autoscaling.enabled }}
   replicas: {{ .Values.storage.replicaCount }}
   {{- end }}
+  {{- with .Values.storage.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.storage.selectorLabels" . | nindent 6 }}
@@ -73,7 +77,7 @@ spec:
                   name: {{ include "supabase.secret.s3" . }}
                   key: accessKey
           name: init-bucket
-          image: minio/mc
+          image: quay.io/minio/mc:RELEASE.2025-02-21T16-00-46Z
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
