@@ -583,6 +583,16 @@ meta:
 storage:
   # Enable storage provisioning
   enabled: true
+  # init-bucket init container: creates the MinIO bucket before storage-api starts.
+  # The MinIO images (quay.io/minio/mc, minio/mc) stopped being public in 2026-10 (401), so the
+  # default is the Bitnami legacy build, whose mc lives at /opt/bitnami/minio-client/bin/mc and
+  # needs root here. These defaults are exactly what production has run since the 2026-10-06 fix.
+  initBucket:
+    image: docker.io/bitnamilegacy/minio-client:2025.2.21
+    pullPolicy: IfNotPresent
+    mcPath: /opt/bitnami/minio-client/bin/mc
+    securityContext:
+      runAsUser: 0
   image:
     repository: supabase/storage-api
     pullPolicy: IfNotPresent
