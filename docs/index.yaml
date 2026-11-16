@@ -2,7 +2,17 @@ apiVersion: v1
 entries:
   supabase:
   - apiVersion: v2
-    created: "2026-09-20T04:17:15.944694313Z"
+    created: "2026-11-16T08:59:28.49179212Z"
+    description: The open source Firebase alternative.
+    digest: 6a94de62bdc035997e6f71f308c296ea43f0d36647a073519ca6797fd24491bf
+    icon: https://avatars.githubusercontent.com/u/54469796?s=280&v=4
+    name: supabase
+    type: application
+    urls:
+    - https://iMash-io.github.io/supabase-k8-helm/supabase-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v2
+    created: "2026-11-16T08:59:28.488095586Z"
     description: The open source Firebase alternative.
     digest: 8a7a1404ae6d38f2703fe2ba4882b057d7ff92b1f6243423deaec6ae69696ec4
     icon: https://avatars.githubusercontent.com/u/54469796?s=280&v=4
@@ -12,7 +22,7 @@ entries:
     - https://iMash-io.github.io/supabase-k8-helm/supabase-0.1.4.tgz
     version: 0.1.4
   - apiVersion: v2
-    created: "2026-09-20T04:17:15.941963004Z"
+    created: "2026-11-16T08:59:28.48506819Z"
     description: The open source Firebase alternative.
     digest: 8cd75116142c3b710dc1c7fe001dc8eb803fea372cf237de06c8dc4a8e7ca603
     icon: https://avatars.githubusercontent.com/u/54469796?s=280&v=4
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://iMash-io.github.io/supabase-k8-helm/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-09-20T04:17:15.93896519Z"
+generated: "2026-11-16T08:59:28.482173283Z"
